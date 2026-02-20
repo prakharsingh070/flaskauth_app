@@ -1,11 +1,15 @@
 from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
+import os
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+
+# Configuration for deployment
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///database.db")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-app.secret_key = 'secret_key'
+app.secret_key = os.environ.get("SECRET_KEY", "secret_key_for_development_only")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -21,8 +25,7 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'),self.password.encode('utf-8'))
 
-with app.app_context():
-    db.create_all()
+# Database initialization will be handled in production section at the end of the file
     
     
 @app.route("/")
@@ -98,4 +101,11 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # For local development
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+else:
+    # For production (Render will use this)
+    with app.app_context():
+        db.create_all()

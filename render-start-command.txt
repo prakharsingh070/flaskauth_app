@@ -1,0 +1,2 @@
+# Render Start Command (put this in the Start Command field in Render dashboard)
+gunicorn app:app
