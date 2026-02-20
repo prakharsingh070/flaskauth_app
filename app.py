@@ -32,18 +32,18 @@ def index():
 @app.route("/register", methods=['GET','POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
         
         # Validation: Check if fields are empty
-        if not name or not name.strip():
+        if not name:
             return render_template('register.html', error='Name should not be empty')
         
-        if not email or not email.strip():
+        if not email:
             return render_template('register.html', error='Email should not be empty')
         
-        if not password or not password.strip():
+        if not password:
             return render_template('register.html', error='Password should not be empty')
         
         # Validation: Password length should be at least 6 characters
@@ -55,11 +55,15 @@ def register():
         if existing_user:
             return render_template('register.html', error='Email already registered. Please use a different email.')
         
-        # If all validations pass, create new user
-        new_user = User(name=name, email=email, password=password)
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect('/login')
+        try:
+            # If all validations pass, create new user
+            new_user = User(name=name, email=email, password=password)
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect('/login')
+        except Exception as e:
+            db.session.rollback()
+            return render_template('register.html', error='Registration failed. Please try again.')
     
     return render_template("register.html")
 
